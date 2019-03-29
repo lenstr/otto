@@ -690,6 +690,130 @@ func TestNativeCallWithUint64(t *testing.T) {
 	}
 }
 
+type CustomUint64 uint64
+
+func TestNativeCallWithCustomUint64(t *testing.T) {
+	vm := New()
+
+	called := false
+
+	vm.Set("getValue", func() CustomUint64 {
+		return 42
+	})
+
+	vm.Set("testValue", func(a1 CustomUint64) {
+		if a1 != 42 {
+			t.Fail()
+		}
+
+		called = true
+	})
+
+	s, _ := vm.Compile("test.js", `testValue(getValue())`)
+
+	if _, err := vm.Run(s); err != nil {
+		t.Logf("err should have been nil; was %s\n", err.Error())
+		t.Fail()
+	}
+
+	if !called {
+		t.Fail()
+	}
+}
+
+type CustomFloat64 float64
+
+func TestNativeCallWithCustomFloat64(t *testing.T) {
+	vm := New()
+
+	called := false
+
+	vm.Set("getValue", func() CustomFloat64 {
+		return 42
+	})
+
+	vm.Set("testValue", func(a1 CustomFloat64) {
+		if a1 != 42 {
+			t.Fail()
+		}
+
+		called = true
+	})
+
+	s, _ := vm.Compile("test.js", `testValue(getValue())`)
+
+	if _, err := vm.Run(s); err != nil {
+		t.Logf("err should have been nil; was %s\n", err.Error())
+		t.Fail()
+	}
+
+	if !called {
+		t.Fail()
+	}
+}
+
+type CustomString string
+
+func TestNativeCallWithCustomString(t *testing.T) {
+	vm := New()
+
+	called := false
+
+	vm.Set("getValue", func() CustomString {
+		return "hello"
+	})
+
+	vm.Set("testValue", func(a1 CustomString) {
+		if a1 != "hello" {
+			t.Fail()
+		}
+
+		called = true
+	})
+
+	s, _ := vm.Compile("test.js", `testValue(getValue())`)
+
+	if _, err := vm.Run(s); err != nil {
+		t.Logf("err should have been nil; was %s\n", err.Error())
+		t.Fail()
+	}
+
+	if !called {
+		t.Fail()
+	}
+}
+
+type CustomBool bool
+
+func TestNativeCallWithCustomBool(t *testing.T) {
+	vm := New()
+
+	called := false
+
+	vm.Set("getValue", func() CustomBool {
+		return true
+	})
+
+	vm.Set("testValue", func(a1 CustomBool) {
+		if a1 != true {
+			t.Fail()
+		}
+
+		called = true
+	})
+
+	s, _ := vm.Compile("test.js", `testValue(getValue())`)
+
+	if _, err := vm.Run(s); err != nil {
+		t.Logf("err should have been nil; was %s\n", err.Error())
+		t.Fail()
+	}
+
+	if !called {
+		t.Fail()
+	}
+}
+
 func TestNativeCallWithStringInt(t *testing.T) {
 	vm := New()
 
