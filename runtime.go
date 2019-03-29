@@ -290,7 +290,7 @@ var typeOfValue = reflect.TypeOf(Value{})
 // convertCallParameter converts request val to type t if possible.
 // If the conversion fails due to overflow or type miss-match then it panics.
 // If no conversion is known then the original value is returned.
-func (self *_runtime) convertCallParameter(v Value, t reflect.Type) (result reflect.Value) {
+func (self *_runtime) convertCallParameter(v Value, t reflect.Type) reflect.Value {
 	if t == typeOfValue {
 		return reflect.ValueOf(v)
 	}
@@ -352,18 +352,30 @@ func (self *_runtime) convertCallParameter(v Value, t reflect.Type) (result refl
 
 	switch tk {
 	case reflect.Bool:
-		return reflect.ValueOf(v.bool()).Convert(t)
+		result := reflect.ValueOf(v.bool())
+		if result.Type() != t {
+			return result.Convert(t)
+		}
+		return result
 	case reflect.String:
 		switch v.kind {
 		case valueString:
-			return reflect.ValueOf(v.value).Convert(t)
+			result := reflect.ValueOf(v.value)
+			if result.Type() != t {
+				return result.Convert(t)
+			}
+			return result
 		case valueNumber:
 			return reflect.ValueOf(fmt.Sprintf("%v", v.value))
 		}
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Float32, reflect.Float64:
 		switch v.kind {
 		case valueNumber:
-			return self.convertNumeric(v, t).Convert(t)
+			numeric := self.convertNumeric(v, t)
+			if numeric.Type() != t {
+				return numeric.Convert(t)
+			}
+			return numeric
 		}
 	case reflect.Slice:
 		if o := v._object(); o != nil {
