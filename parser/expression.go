@@ -2,6 +2,7 @@ package parser
 
 import (
 	"regexp"
+	"strconv"
 
 	"github.com/robertkrimen/otto/ast"
 	"github.com/robertkrimen/otto/file"
@@ -174,8 +175,59 @@ func (self *_parser) parseRegExpLiteral() *ast.RegExpLiteral {
 	}
 }
 
-func (self *_parser) parseVariableDeclaration(declarationList *[]*ast.VariableExpression) ast.Expression {
+func (self *_parser) parseDestructuringAssignment(declarationList *[]*ast.VariableExpression) []ast.Expression {
+	/*
+		var [x, y, z] = [1, 2, 3];
+		=>
+		var _tmp = [1, 2, 3],
+		    x = _tmp[0],
+		    y = _tmp[1],
+		    z = _tmp[2];
+	*/
 
+	idx := self.idx
+	vars := []*ast.VariableExpression{}
+
+	destrArrayLiteral := self.parseArrayLiteral().(*ast.ArrayLiteral)
+	self.expect(token.ASSIGN)
+	destrArrayLiteralAssignExp := self.parseAssignmentExpression()
+
+	// TODO make unique
+	tmpVarName := "$$__tmp_variable__$$"
+
+	vars = append(vars, &ast.VariableExpression{
+		Name:        tmpVarName,
+		Idx:         idx,
+		Initializer: destrArrayLiteralAssignExp,
+	})
+
+	for index, expr := range destrArrayLiteral.Value {
+		identifier := expr.(*ast.Identifier)
+
+		vars = append(vars, &ast.VariableExpression{
+			Name: identifier.Name,
+			Idx:  identifier.Idx,
+			Initializer: &ast.BracketExpression{
+				Left:         &ast.Identifier{Name: tmpVarName, Idx: idx},
+				Member:       &ast.NumberLiteral{Idx: idx, Literal: strconv.Itoa(index), Value: index},
+				LeftBracket:  idx,
+				RightBracket: idx,
+			},
+		})
+	}
+
+	for _, expr := range vars {
+		*declarationList = append(*declarationList, expr)
+	}
+
+	out := make([]ast.Expression, len(vars))
+	for i, exp := range vars {
+		out[i] = exp
+	}
+	return out
+}
+
+func (self *_parser) parseVariableDeclaration(declarationList *[]*ast.VariableExpression) ast.Expression {
 	if self.token != token.IDENTIFIER {
 		idx := self.expect(token.IDENTIFIER)
 		self.nextStatement()
@@ -217,8 +269,15 @@ func (self *_parser) parseVariableDeclarationList(var_ file.Idx) []ast.Expressio
 		if self.mode&StoreComments != 0 {
 			self.comments.MarkComments(ast.LEADING)
 		}
-		decl := self.parseVariableDeclaration(&declarationList)
-		list = append(list, decl)
+
+		if self.token == token.LEFT_BRACKET {
+			decls := self.parseDestructuringAssignment(&declarationList)
+			list = append(list, decls...)
+		} else {
+			decl := self.parseVariableDeclaration(&declarationList)
+			list = append(list, decl)
+		}
+
 		if self.token != token.COMMA {
 			break
 		}

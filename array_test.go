@@ -718,3 +718,18 @@ func TestArray_new(t *testing.T) {
         `, "1,object,true,1,object,true")
 	})
 }
+
+func TestArray_destructuring(t *testing.T) {
+	tt(t, func() {
+		test, _ := test()
+
+		test(`
+			var arr = [1, 2, 3];
+			var [a, b, c] = arr;
+
+			var [d, e, f] = [4, 5, 6];	
+
+			[a, b, c, d, e, f]
+		`, "1,2,3,4,5,6")
+	})
+}
