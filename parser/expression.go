@@ -202,6 +202,11 @@ func (self *_parser) parseDestructuringAssignment(declarationList *[]*ast.Variab
 	})
 
 	for index, expr := range destrArrayLiteral.Value {
+		if _, ok := expr.(*ast.EmptyExpression); ok {
+			// ignore
+			continue
+		}
+
 		identifier := expr.(*ast.Identifier)
 
 		vars = append(vars, &ast.VariableExpression{

@@ -726,10 +726,18 @@ func TestArray_destructuring(t *testing.T) {
 		test(`
 			var arr = [1, 2, 3];
 			var [a, b, c] = arr;
-
 			var [d, e, f] = [4, 5, 6];	
 
 			[a, b, c, d, e, f]
 		`, "1,2,3,4,5,6")
+
+		test(`
+			function doSmth() {
+				return [42, "error"]
+			}
+
+			var [, err] = doSmth();
+			err
+		`, "error")
 	})
 }
